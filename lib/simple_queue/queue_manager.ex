@@ -31,6 +31,13 @@ defmodule QueueManager do
       Enum.reduce(1..num, %{}, fn n, acc ->
         child_name = "SimpleQueue" <> Integer.to_string(n)
 
+        if length(Map.keys(state.children)) > 0 do
+          state.children
+          |> Enum.each(fn {_name, pid} ->
+            DynamicSupervisor.terminate_child(SimpleQueue.Supervisor, pid)
+          end)
+        end
+
         {:ok, pid} =
           DynamicSupervisor.start_child(SimpleQueue.Supervisor, %{
             id: "SimpleQueue" <> Integer.to_string(n),
@@ -51,14 +58,12 @@ defmodule QueueManager do
   end
 
   def handle_call({:stop_child, name}, _, state) do
-    IO.inspect(name, label: "Stopping child name: ")
-
     case Map.has_key?(state.children, name) do
       true ->
         pid = state.children[name]
         response = DynamicSupervisor.terminate_child(SimpleQueue.Supervisor, pid)
         state = %{state | children: Map.delete(state.children, name)}
-        {:reply, response, state}
+        {:reply, state.children, state}
 
       false ->
         Logger.error("Child with the name #{name} not found")

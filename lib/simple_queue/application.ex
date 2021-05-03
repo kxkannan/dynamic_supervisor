@@ -7,7 +7,7 @@ defmodule SimpleQueue.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [{QueueManager, []}]
+    children = [{QueueManager, %{}}]
     opts = [strategy: :one_for_one, name: QueueManager.Supervisor]
 
     options = [
